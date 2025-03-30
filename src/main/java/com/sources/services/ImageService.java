@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 public class ImageService implements IImageService{
 
     @Autowired
-    private ImageRepository imageRepository;
+    ImageRepository imageRepository;
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    ApplicationEventPublisher eventPublisher;
 
     public ImageDTO addImage(ImageDTO imageDto) {
         if (!isValidImageURL(imageDto.getUrl())) {

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class SlidesShowService implements ISlidesShowService{
 
     @Autowired
-    private SlidesShowRepository slideshowRepository;
+    SlidesShowRepository slideshowRepository;
     @Autowired
     ImageRepository imageRepository;
     @Autowired
@@ -39,7 +39,7 @@ public class SlidesShowService implements ISlidesShowService{
     @Autowired
     SlideshowImageRepository slideshowImageRepository;
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    ApplicationEventPublisher eventPublisher;
 
     public SlidesShowDTO addSlideshow(SlidesShowDTO slideshowDto) {
         try {
