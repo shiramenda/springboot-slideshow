@@ -36,6 +36,10 @@
 - The **order of images in a slideshow** is based on the time they were **added to the slideshow** (not the time they were uploaded).
 - Once an image is deleted it will be deleted from the slideshow as well.
 
+## Notes
+- I used a local db to test it.
+- Spring EventPublisher is used to publish add, update and delete events(to console)
+- I built Docker image and started both the application and MySQL containers with: docker-compose up --build
 
 ---
 
