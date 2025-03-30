@@ -55,14 +55,6 @@ This RESTful API is designed to manage images and slideshows with precise orderi
 
 To support **duplicate image entries and ordering** in slideshows, the `SlideshowImage` join entity is used.
 
-### Fields:
-```java
-Long id
-SlidesShow slidesShow
-Image image
-LocalDateTime createdDate // used for preserving image insertion order
-```
-
 Each entry in `SlideshowImage` links a slideshow to an image with a timestamp, allowing:
 - **Duplicate entries** (e.g., image 20 added multiple times).
 - **Consistent ordering** using `createdDate`.
