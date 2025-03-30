@@ -62,9 +62,7 @@ Each entry in `SlideshowImage` links a slideshow to an image with a timestamp, a
 ---
 
 ## Endpoints
-### Base URL example: http://localhost:8080 
-### Image Endpoints
-
+- **Base URL example:** `http://localhost:8080`
 #### Add Image
 - **URL:** `/api/addImage`
 - **Method:** `POST`
