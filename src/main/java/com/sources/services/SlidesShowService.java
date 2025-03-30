@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -128,7 +129,10 @@ public class SlidesShowService implements ISlidesShowService{
             SlideshowImage slideshowImage = new SlideshowImage();
             slideshowImage.setSlidesShow(slideshow);
             slideshowImage.setImage(image);
-            slideshowImage.setCreatedDate(image.getAddedDate()); // Set the creation timestamp.
+            slideshowImage.setCreatedDate(LocalDateTime.now());
+            // if we want to to get the images ordered by image uploaded time
+            //then we should use this line instead:
+            //slideshowImage.setCreatedDate(image.getAddedDate());
             slideshowImageRepository.save(slideshowImage);
         }
     }

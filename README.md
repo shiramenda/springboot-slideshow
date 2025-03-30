@@ -1,4 +1,3 @@
-
 ---
 
 # Image & Slideshow Management API
@@ -9,48 +8,76 @@ All endpoints are prefixed with the base URL. For example, when running locally,
 http://localhost:8080
 ```
 
-This project is a RESTful API designed to manage images and slideshows. It supports adding, searching, and deleting images as well as creating, ordering, and tracking slideshows.
+This RESTful API is designed to manage images and slideshows with precise ordering and duplication support. It enables operations such as adding/searching/deleting images and creating structured slideshows, along with proof-of-play tracking.
+
+---
 
 ## Table of Contents
-
 - [Features](#features)
+- [Assumptions](#assumptions)
+- [SlideshowImage Entity](#slideshowimage-entity)
 - [Endpoints](#endpoints)
     - [Image Endpoints](#image-endpoints)
-        - [Add Image](#add-image)
-        - [Delete Image](#delete-image)
-        - [Search Images](#search-images)
     - [Slideshow Endpoints](#slideshow-endpoints)
-        - [Add Slideshow](#add-slideshow)
-        - [Delete Slideshow](#delete-slideshow)
-        - [Get Slideshow Order](#get-slideshow-order)
-        - [Record Proof-of-Play](#record-proof-of-play)
 - [Configuration](#configuration)
 - [Setup and Running the Application](#setup-and-running-the-application)
 - [Error Handling](#error-handling)
 - [License](#license)
 
+---
+
 ## Features
 
-- **Image Management:**
-    - Add new images with a validated URL and duration.
-    - Delete images by ID.
-    - Search images by URL substring and/or duration with pagination.
+### Image Management:
+- Add new images with validated URLs and duration.
+- Reuse existing image records (by URL + duration).
+- Delete images by ID.
+- Search images by URL substring and/or duration (with pagination).
 
-- **Slideshow Management:**
-    - Create and delete slideshows.
-    - Retrieve ordered images within a slideshow.
-    - Record proof-of-play events for images within a slideshow.
+### Slideshow Management:
+- Create and delete slideshows.
+- Add duplicate images to the same slideshow.
+- Maintain precise image ordering using `createdDate`.
+- Retrieve ordered images from a slideshow.
+- Record proof-of-play events for auditing.
+
+---
+
+## Assumptions
+- Adding a slideshow with a **duplicate name** is **not allowed**.
+- Adding an image with the **same URL and duration** will **reuse and update** the existing image.
+- A slideshow **may include the same image multiple times**.
+- The **order of images in a slideshow** is based on the time they were **added to the slideshow** (not the time they were uploaded).
+
+---
+
+## SlideshowImage Entity
+
+To support **duplicate image entries and ordering** in slideshows, the `SlideshowImage` join entity is used.
+
+### Fields:
+```java
+Long id
+SlidesShow slidesShow
+Image image
+LocalDateTime createdDate // used for preserving image insertion order
+```
+
+Each entry in `SlideshowImage` links a slideshow to an image with a timestamp, allowing:
+- **Duplicate entries** (e.g., image 20 added multiple times).
+- **Consistent ordering** using `createdDate`.
+
+---
 
 ## Endpoints
-
+### Base URL example: http://localhost:8080 
 ### Image Endpoints
 
 #### Add Image
 - **URL:** `/api/addImage`
 - **Method:** `POST`
-- **Description:** Adds a new image. The image URL is validated to ensure it is of the correct format.
 
-**Example Request Payload:**
+**Request:**
 ```json
 {
   "url": "https://example.com/image25.jpg",
@@ -65,14 +92,15 @@ This project is a RESTful API designed to manage images and slideshows. It suppo
   "duration": 30
 }
 ```
-**Example add the same url and duration and get the same id:**
+
+**Add the same URL + duration again:**
 ```json
 {
   "url": "https://example.com/image25.jpg",
   "duration": 30
 }
 ```
-**Response:**
+**Response (same ID returned):**
 ```json
 {
   "id": 25,
@@ -80,16 +108,20 @@ This project is a RESTful API designed to manage images and slideshows. It suppo
   "duration": 30
 }
 ```
+
 ---
 
 #### Delete Image
 - **URL:** `/api/deleteImage/{id}`
 - **Method:** `DELETE`
-- **Description:** Deletes an image by its ID.
 
-**Example URL:**
+**Example:**
 ```
-http://localhost:8080/api/deleteImage/101
+DELETE /api/deleteImage/101
+```
+**Response:**
+```
+"Image deleted successfully"
 ```
 
 ---
@@ -97,23 +129,29 @@ http://localhost:8080/api/deleteImage/101
 #### Search Images
 - **URL:** `/api/images/search`
 - **Method:** `GET`
-- **Description:** Searches for images based on URL substring and/or duration. Supports pagination.
 
-**Query Parameters:**
-- `url` (optional): Substring to search within the image URL.
-- `duration` (optional): Exact duration to filter images.
-- Pagination parameters like `page` and `size` can be included.
+**Examples:**
+```
+GET /api/images/search?url=example&duration=30&page=0&size=5
+GET /api/images/search?duration=20
+GET /api/images/search
+```
+**Sample Response:**
+```json
+[
+  {
+    "id": 20,
+    "url": "https://example.com/image20.jpg",
+    "duration": 30
+  },
+  {
+    "id": 21,
+    "url": "https://example.com/image21.jpg",
+    "duration": 30
+  }
+]
+```
 
-**Example Request URL:**
-```
-http://localhost:8080/api/images/search
-```
-```
-http://localhost:8080/api/images/search?url=example&duration=30&page=0&size=10
-```
-```
-http://localhost:8080/api/images/search?page=0&size=5
-```
 ---
 
 ### Slideshow Endpoints
@@ -121,35 +159,37 @@ http://localhost:8080/api/images/search?page=0&size=5
 #### Add Slideshow
 - **URL:** `/api/addSlideshow`
 - **Method:** `POST`
-- **Description:** Creates a new slideshow and attaches images by their IDs.
 
-**Example Request Payload:**
-**Supporting duplicate images:**
+**Request (with duplicates):**
 ```json
 {
-  "name": "Summer Vacation",
-  "imageIds": [1, 2, 3]
+  "name": "My Slideshow",
+  "imageIds": [10, 11, 10]
 }
 ```
+**Response:**
 ```json
 {
-  "name": "duplicate image20 Vacation",
-  "imageIds": [20,21,20]
+  "id": 3,
+  "name": "My Slideshow",
+  "imageIds": [10, 11, 10]
 }
 ```
-**Example duplicate name:**
+
+**Duplicate slideshow name:**
 ```json
 {
-  "name": "Summer Vacation",
-  "imageIds": [4, 5, 6]
+  "name": "My Slideshow",
+  "imageIds": [12, 13, 14]
 }
 ```
+**Response:**
 ```json
 {
   "type": "about:blank",
   "title": "Internal Server Error",
   "status": 500,
-  "detail": "Slideshow with Name check id is already exists.",
+  "detail": "Slideshow with Name My Slideshow is already exists.",
   "instance": "/api/addSlideshow"
 }
 ```
@@ -159,11 +199,14 @@ http://localhost:8080/api/images/search?page=0&size=5
 #### Delete Slideshow
 - **URL:** `/api/deleteSlideshow/{id}`
 - **Method:** `DELETE`
-- **Description:** Deletes a slideshow by its ID.
 
-**Example URL:**
+**Example:**
 ```
-http://localhost:8080/api/deleteSlideshow/1
+DELETE /api/deleteSlideshow/1
+```
+**Response:**
+```
+"Slideshow deleted successfully"
 ```
 
 ---
@@ -171,15 +214,13 @@ http://localhost:8080/api/deleteSlideshow/1
 #### Get Slideshow Order
 - **URL:** `/api/slideShow/{id}/slidesShowOrder`
 - **Method:** `GET`
-- **Description:** Retrieves the images in the order they were added to a slideshow. Supports pagination.
-- **Note:** the images will be displayed by the order they were created.
-- If an image is included twice in the slideshow it will be displayed twice
+- **Description:** Returns the ordered list of images based on their insertion timestamp.
 
-**Example URL:**
+**Example:**
 ```
-http://localhost:8080/api/slideShow/1/slidesShowOrder?page=0&size=10
+GET /api/slideShow/1/slidesShowOrder?page=0&size=10
 ```
-**Response, duplicated image20 will be displayed first:**
+**Response with duplicate images:**
 ```json
 [
   {
@@ -199,73 +240,86 @@ http://localhost:8080/api/slideShow/1/slidesShowOrder?page=0&size=10
   }
 ]
 ```
+
 ---
 
 #### Record Proof-of-Play
 - **URL:** `/api/slideShow/{id}/proof-of-play/{imageId}`
 - **Method:** `POST`
-- **Description:** Records a proof-of-play event indicating that a specific image has been played in a slideshow.
 
-**Example URL:**
+**Example:**
 ```
-http://localhost:8080/api/slideShow/1/proof-of-play/101
+POST /api/slideShow/1/proof-of-play/101
+```
+**Response:**
+```
+"Proof of play recorded successfully"
 ```
 
 ---
 
 ## Configuration
 
-Before running the application, update your `application.properties` file with the correct database details. Below is a sample configuration:
-
+Edit `application.properties` in `src/main/resources`:
 ```properties
-# Database Connection
-spring.datasource.url=
-spring.datasource.username=
-spring.datasource.password=
+spring.datasource.url=jdbc:mysql://localhost:3306/mydb
+spring.datasource.username=root
+spring.datasource.password=pass
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-# JPA / Hibernate Settings
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
 spring.jpa.show-sql=true
 logging.level.org.hibernate.SQL=DEBUG
 ```
 
-**Note:** Make sure to change `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` to match your own database settings.
+---
 
 ## Setup and Running the Application
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/your-repo/image-slideshow-api.git
-   cd image-slideshow-api
-   ```
+```bash
+git clone https://github.com/shiramenda/springboot-slideshow.git
+cd springboot-slideshow
+mvn clean install
+mvn spring-boot:run
+```
 
-2. **Update Database Settings:**
-   Modify the `application.properties` file located under `src/main/resources` with your specific database details.
+Use tools like Postman or cURL to test the API.
 
-3. **Build the Project:**
-   Use Maven (or your preferred build tool) to build the project:
-   ```bash
-   mvn clean install
-   ```
-
-4. **Run the Application:**
-   Start the application via your IDE or by running:
-   ```bash
-   mvn spring-boot:run
-   ```
-
-5. **Test the Endpoints:**
-   Use tools like [Postman](https://www.postman.com/) or [cURL](https://curl.se/) to test the endpoints with the provided example payloads.
+---
 
 ## Error Handling
 
-The API returns meaningful error messages for various error scenarios:
-- **Invalid Image URL:** When the image URL doesn't match the expected format.
-- **Resource Not Found:** When an image or slideshow is not found.
-- **No Results Found:** When no images match the search criteria.
-- **Database Errors:** When issues occur during save or delete operations.
+The API uses `ProblemDetail` format for all exceptions:
 
----
+| Exception                         | HTTP Status           | Example Message                                           |
+|----------------------------------|------------------------|-----------------------------------------------------------|
+| `ResourceNotFoundException`      | 404 NOT FOUND          | "Image with ID 99 not found."                            |
+| `InvalidImageURLException`       | 400 BAD REQUEST        | "Invalid image URL: invalid.png"                         |
+| `NoResultsFoundException`        | 404 NOT FOUND          | "No images found for the given criteria."               |
+| `NoImagesFoundException`         | 404 NOT FOUND          | "No images found for slideshow ID: 1"                   |
+| `DuplicateSlideshowNameException`| 500 INTERNAL SERVER    | "Slideshow with Name 'X' is already exists."            |
+| `DatabaseOperationException`     | 500 INTERNAL SERVER    | "Database error while saving the image."                |
+| `Exception` (uncaught)           | 500 INTERNAL SERVER    | "An unexpected error occurred."                         |
+
+**Example response for missing image:**
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Image with ID 99 not found."
+}
+```
+
+**Example response for invalid image URL:**
+```json
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Invalid image URL: ftp://badlink.com"
+}
+```
+
+
 
