@@ -7,6 +7,7 @@ import com.sources.exceptions.InvalidImageURLException;
 import com.sources.exceptions.NoResultsFoundException;
 import com.sources.exceptions.ResourceNotFoundException;
 import com.sources.repositories.ImageRepository;
+import com.sources.repositories.SlideshowImageRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,6 +31,8 @@ public class ImageService implements IImageService{
     ImageRepository imageRepository;
     @Autowired
     ApplicationEventPublisher eventPublisher;
+    @Autowired
+    private SlideshowImageRepository slideshowImageRepository;
 
     public ImageDTO addImage(ImageDTO imageDto) {
         if (!isValidImageURL(imageDto.getUrl())) {
@@ -60,6 +63,7 @@ public class ImageService implements IImageService{
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Image not found"));
         try{
+            slideshowImageRepository.deleteAllByImageId(id);
             imageRepository.deleteById(id);
             // Fire event
             eventPublisher.publishEvent(new AppActionEvent(

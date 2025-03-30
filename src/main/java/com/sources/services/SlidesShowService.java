@@ -73,6 +73,7 @@ public class SlidesShowService implements ISlidesShowService{
                 .orElseThrow(() -> new ResourceNotFoundException("Slideshow with ID " + id + " not found."));
 
         try {
+            slideshowImageRepository.deleteAllBySlidesShowId(id);
             slideshowRepository.deleteById(id);
             // Fire event
             eventPublisher.publishEvent(new AppActionEvent(

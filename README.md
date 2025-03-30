@@ -34,6 +34,8 @@
 - Adding an image with the **same URL and duration** will **reuse and update** the existing image.
 - A slideshow **may include the same image multiple times**.
 - The **order of images in a slideshow** is based on the time they were **added to the slideshow** (not the time they were uploaded).
+- Once an image is deleted it will be deleted from the slideshow as well.
+
 
 ---
 
@@ -231,7 +233,16 @@ POST /api/slideShow/1/proof-of-play/101
 ```
 "Proof of play recorded successfully"
 ```
-
+**Response for invalid input:**
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Image with ID 233 not found.",
+  "instance": "/api/slideShow/18/proof-of-play/233"
+}
+```
 ---
 
 ## Configuration
