@@ -1,17 +1,3 @@
----
-
-# Image & Slideshow Management API
-
-**Base URL:**  
-All endpoints are prefixed with the base URL. For example, when running locally, the base URL might be:
-```
-http://localhost:8080
-```
-
-This RESTful API is designed to manage images and slideshows with precise ordering and duplication support. It enables operations such as adding/searching/deleting images and creating structured slideshows, along with proof-of-play tracking.
-
----
-
 ## Table of Contents
 - [Features](#features)
 - [Assumptions](#assumptions)
